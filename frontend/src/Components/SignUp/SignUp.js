@@ -20,7 +20,7 @@ class SignUp extends Component {
         this.handleAccountChange = this.handleAccountChange.bind(this);
         this.handlePasswordChange = this.handlePasswordChange.bind(this);
         this.handleConfirmPasswordChange = this.handleConfirmPasswordChange.bind(this);
-    //    this.handleFormSubmit = this.handleFormSubmit.bind(this);
+        this.handleFormSubmit = this.handleFormSubmit.bind(this);
         this.confirmPasswordMatch = this.confirmPasswordMatch.bind(this);
     }
 
@@ -32,6 +32,10 @@ class SignUp extends Component {
         this.setState({ name: event.target.value })
     }
 
+    handleAccountChange(event){
+        this.setState({ account: event.target.value })
+    }
+
     handlePasswordChange(event){
         this.setState({ password: event.target.value })
     }
@@ -40,10 +44,6 @@ class SignUp extends Component {
         this.setState({ confirmPassword: event.target.value })
     }
     
-    handleAccountChange(event){
-        this.setState({ account: event.target.value })
-    }
-
     confirmPasswordMatch(){
         if (this.state.password === this.state.confirmPassword){
             return true
@@ -52,6 +52,40 @@ class SignUp extends Component {
         }
     }
 
+    handleFormSubmit(event){
+    const checker = this.confirmPasswordMatch()
+    if (checker === true){
+        this.setState({ email: event.target.value })
+        this.setState({ name: event.target.value })
+        this.setState({ account: event.target.value })
+        this.setState({ password: event.target.value })
+        this.setState({ confirmPassword: event.target.value })
+        
+        const data = { email: this.state.email, name: this.state.name, account: this.state.account, password: this.state.password, confirmPassword: this.state.confirmPassword }    
+        fetch(`http://127.0.0.1:5000/api/create`, {
+            crossDomain:true,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+            console.log('Success:', data);
+            if (data.message === true) {
+                window.alert('You Already Have An Account. Please Sign In');
+            } else { 
+                window.alert('Your Account Has Been Created. Please Sign In');
+            }
+            })    
+    
+    }
+    else{
+        window.alert('The Passwords Do Not Match');
+    }
+    }
     render() {
     return (
     <div className="SignUp"> 
@@ -79,8 +113,8 @@ class SignUp extends Component {
                 <Form.Control as="select"
                 required  value = { this.state.account }
                 onChange={ this.handleAccountChange }  >
-                    <option value="1">Yes</option>
-                    <option value="2">No</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
                 </Form.Control>
            </Form.Group>
 
