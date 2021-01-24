@@ -14,7 +14,7 @@ class SignIn extends Component {
     }
     this.handleEmailChange = this.handleEmailChange.bind(this);
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
-    //this.handleFormSubmit = this.handleFormSubmit.bind(this)
+    this.handleFormSubmit = this.handleFormSubmit.bind(this)
     }
     
     handleEmailChange(event){
@@ -25,10 +25,40 @@ class SignIn extends Component {
         this.setState({ password: event.target.value })
     }
 
+    handleFormSubmit(event){
+    event.preventDefault();
+
+    const data = { email: this.state.email, password: this.state.password }
+    fetch(`http://127.0.0.1:5000/api/signIn`, {
+        crossDomain: true,
+        mode: 'cors',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(data => {
+        console.log('Success', data);
+        if (data.message === true){
+            window.alert("You do not have an account");
+        } else if (data.message === false){
+            window.alert("The password you entered does not match what we have on file");
+        } else{
+        console.log(data.message)
+
+        localStorage.setItem('jwtToken', data.message);
+        //this.props.history.push('/email');
+        }
+        })
+    }
+
     render() {
     return (
         <div className= 'SignIn'>
-    <Form> 
+    <Form onSubmit={this.handleFormSubmit}> 
     
     <Form.Group controlId="BasicEmail">
         <Form.Label>Email address</Form.Label>

@@ -38,5 +38,47 @@ def existingUser(checkEmail):
     else:
         return True  #If the user does exist
 
+@run.route('/api/signIn', methods=['GET','POST'])
+def signIn():
+    request_data = json.loads(request.data)
+    print(request_data)
+    # Query Database to see if email exists
+    statusEmail = existingUser(request_data['email'])
+    if statusEmail == True:
+    # Query Database to see if password matches that email that was queried
+        statusPassword = checkPassword(request_data['email'], request_data['password'])
+        if statusPassword == True:
+            return jsonify(message="you have an account and password match")
+        else:
+            return jsonify(message=False)
+    else:
+        return jsonify(message=True)
+    return
+
+def checkPassword(checkEmail,password):
+    user  = users.query.filter_by(emails=checkEmail).first()
+    userPassword = user.passwords
+    if userPassword == password:
+        return True
+    else:
+        return False
+    return
+
+def existingUser(checkEmail):
+    status = users.query.filter_by(emails=checkEmail).first()
+    if status == None:
+        return False #If the user does not exist
+    else:
+        return True #If the user does exist
+    return
+
 if __name__ == '__main__':
     run.run(debug=True)
+
+
+
+
+
+
+
+

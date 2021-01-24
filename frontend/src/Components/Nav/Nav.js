@@ -1,19 +1,14 @@
-import React, { Component } from 'react';
+import React from 'react';
 import './Nav.css';
 import Navbar from 'react-bootstrap/Navbar';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useSelector, useDispatch } from 'react-redux';
+import { changeLogFalse } from '../../actions/' 
 
-class Nav extends Component {
-    constructor(props){
-    super();
-    this.state = {
-    
-    }
+function Nav() {
 
-    }
-
-
-render(){
+const isLogged = useSelector(state => state.isLogged)
+const dispatch = useDispatch();
 
     return (
     <div className="Nav">
@@ -23,10 +18,11 @@ render(){
   <Navbar.Collapse className="justify-content-end">
     <Navbar.Text>
     <a href="/Documentation">Documentation</a>
+    { isLogged ?  <button onClick={ () => dispatch(changeLogFalse()) }>Log out</button> : '' }
     </Navbar.Text>
   </Navbar.Collapse>
 </Navbar>
     </div>
-)}};
+)};
 
 export default Nav;
