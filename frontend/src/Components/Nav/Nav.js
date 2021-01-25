@@ -1,15 +1,14 @@
-import React from 'react';
+import React, { Component } from 'react';
 import './Nav.css';
 import Navbar from 'react-bootstrap/Navbar';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useSelector, useDispatch } from 'react-redux';
-import { changeLogFalse } from '../../actions/' 
+import { withRouter } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { changeLogFalse } from '../../actions/'; 
 
-function Nav() {
-
-const isLogged = useSelector(state => state.isLogged)
-const dispatch = useDispatch();
-
+class Nav extends Component {
+    
+    render() {
     return (
     <div className="Nav">
     <Navbar bg="dark" variant="dark">
@@ -22,12 +21,24 @@ const dispatch = useDispatch();
     
     <a href="/Documentation">Documentation</a>
 
-    { isLogged ?  <a href="/" onClick={ () => dispatch(changeLogFalse()) }>Log out</a> : '' }
+    { this.props.isLogged ? <a href="/" onClick={this.props.changeLogTrue}>Log out</a> : '' }
     
     </Navbar.Text>
   </Navbar.Collapse>
 </Navbar>
     </div>
-)};
+)}};
 
-export default Nav;
+const mapStateToProps = (state) => {
+    return{
+        isLogged: state.isLogged
+    }
+}
+
+const mapDispatchToProps = () => {
+    return {
+        changeLogFalse
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps()) (withRouter(Nav));
