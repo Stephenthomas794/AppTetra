@@ -2,6 +2,8 @@ import React, {Component}  from 'react';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { connect } from 'react-redux';
+import { changeLogTrue } from '../../actions/' 
 
 import './SignIn.css';
 
@@ -48,12 +50,19 @@ class SignIn extends Component {
             window.alert("The password you entered does not match what we have on file");
         } else{
         console.log(data.message)
-
+        console.log(this.props.isLogged)
+//        testing(); // { () => this.props.changeLogTrue }
+        this.props.changeLogTrue();
+        console.log(this.props.isLogged)
         localStorage.setItem('jwtToken', data.message);
-        //this.props.history.push('/email');
+        this.props.history.push('/HomePage');
         }
         })
     }
+    
+//    const testing => () {
+//        return this.props.changeLogTrue() ;
+//    }
 
     render() {
     return (
@@ -80,4 +89,15 @@ class SignIn extends Component {
     }   
 }
 
-export default SignIn;
+const mapStateToProps = (state) => {
+    return{
+        isLogged: state.isLogged
+    }
+}
+
+const mapDispatchToProps = () => {
+    return {
+        changeLogTrue
+    }
+}    
+export default connect(mapStateToProps, mapDispatchToProps())(SignIn);

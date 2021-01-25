@@ -2,7 +2,7 @@ import isLoggedReducer from './isLogged';
 import { combineReducers } from 'redux';
 
 const allReducers = combineReducers({
-    logged: isLoggedReducer
+    isLogged: isLoggedReducer
 })
 
 export default allReducers;
