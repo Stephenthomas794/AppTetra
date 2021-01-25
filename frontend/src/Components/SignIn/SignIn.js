@@ -2,6 +2,7 @@ import React, {Component}  from 'react';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { changeLogTrue } from '../../actions/' 
 
@@ -51,7 +52,6 @@ class SignIn extends Component {
         } else{
         console.log(data.message)
         console.log(this.props.isLogged)
-//        testing(); // { () => this.props.changeLogTrue }
         this.props.changeLogTrue();
         console.log(this.props.isLogged)
         localStorage.setItem('jwtToken', data.message);
@@ -60,10 +60,6 @@ class SignIn extends Component {
         })
     }
     
-//    const testing => () {
-//        return this.props.changeLogTrue() ;
-//    }
-
     render() {
     return (
         <div className= 'SignIn'>
@@ -100,4 +96,4 @@ const mapDispatchToProps = () => {
         changeLogTrue
     }
 }    
-export default connect(mapStateToProps, mapDispatchToProps())(SignIn);
+export default connect(mapStateToProps, mapDispatchToProps()) (withRouter(SignIn));

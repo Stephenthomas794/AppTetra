@@ -13,12 +13,17 @@ const dispatch = useDispatch();
     return (
     <div className="Nav">
     <Navbar bg="dark" variant="dark">
+  
   <Navbar.Brand href="/">AppTetra</Navbar.Brand>
+  
   <Navbar.Toggle />
   <Navbar.Collapse className="justify-content-end">
     <Navbar.Text>
+    
     <a href="/Documentation">Documentation</a>
-    { isLogged ?  <button onClick={ () => dispatch(changeLogFalse()) }>Log out</button> : '' }
+
+    { isLogged ?  <a href="/" onClick={ () => dispatch(changeLogFalse()) }>Log out</a> : '' }
+    
     </Navbar.Text>
   </Navbar.Collapse>
 </Navbar>
