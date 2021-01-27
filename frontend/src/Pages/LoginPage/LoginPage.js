@@ -10,7 +10,6 @@ class LoginPage extends Component {
     constructor() {
     super();
     this.state = {
-
         }
     }
 

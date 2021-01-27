@@ -1,14 +1,20 @@
 from flask import Blueprint, Flask, request, render_template, redirect, jsonify, json
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
+
 from sqlalchemy import select, desc, text
 import requests
 from flask_cors import CORS
+import boto3
+
 from .extensions import mongo
 from .models import db
 
 run = Blueprint('run', __name__)
 
 from .models import users
+
+ec2 = boto3.resource('ec2')
 
 @run.route('/')
 def hello():
@@ -25,6 +31,7 @@ def create():
             db.session.commit()
             AllUsers = users.query.all()
             print (AllUsers)
+            mongoDBUser(request_data['email'])
             return jsonify(message="Success Posting to Database")
         except:
             return jsonify(message="Failed Posting to Database")
@@ -37,6 +44,11 @@ def existingUser(checkEmail):
         return False #If the user does not exist
     else:
         return True  #If the user does exist
+
+def mongoDBUser(email):
+    users_collection = mongo.db.users
+    users_collection.insert({'email' : email})
+    return
 
 @run.route('/api/signIn', methods=['GET','POST'])
 def signIn():
@@ -72,6 +84,24 @@ def existingUser(checkEmail):
         return True #If the user does exist
     return
 
+@run.route('/api/SubmitProject', methods=['GET', 'POST'])
+def SubmitProject():
+    request_data = json.loads(request.data)
+    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'])
+    return jsonify(message=True)    
+
+def addEntry(email, projectName, git, time, entries):
+    users_collection = mongo.db.users
+    users_collection.update_one(
+        {"email": email}, {
+            "$push": { 
+                "projectName": projectName,
+                "git": git, 
+                "time": time,
+                "entries": entries
+                }});
+def amazonKeyStore():
+    pass
 if __name__ == '__main__':
     run.run(debug=True)
 

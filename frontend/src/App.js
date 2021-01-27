@@ -12,22 +12,22 @@ class App extends Component {
   constructor () {                                                                                                                  
   super();
   this.state = { 
-        
+    email: undefined        
   }
   }
-  
-  render(){
 
+  render(){
   return (
     <div className="App">
         <Switch> 
-            <Route path="/" component= { LoginPage }exact />
+            <Route path="/" component= { LoginPage } exact />
             <Route path="/Documentation" component= { Documentation } />
-            <Route path="/HomePage" component= { HomePage } /> 
+            <Route path="/HomePage" component={ HomePage } />
             <Route path="/SubmitProject" component= { SubmitProject } />
         </Switch>
     </div>
   );
 }
 }
+
 export default App;

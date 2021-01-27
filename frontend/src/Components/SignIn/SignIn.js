@@ -9,10 +9,10 @@ import { changeLogTrue } from '../../actions/'
 import './SignIn.css';
 
 class SignIn extends Component {                                                                                                    
-    constructor() {
-    super();
+    constructor(props) {
+    super(props);
     this.state = {
-        email: '',
+        email: this.props.email,
         password: ''
     }
     this.handleEmailChange = this.handleEmailChange.bind(this);
@@ -50,10 +50,11 @@ class SignIn extends Component {
         } else if (data.message === false){
             window.alert("The password you entered does not match what we have on file");
         } else{
-        console.log(data.message)
-        console.log(this.props.isLogged)
+        console.log(data.message);
+        console.log(this.props.isLogged);
         this.props.changeLogTrue();
-        console.log(this.props.isLogged)
+        console.log(this.props.isLogged);
+        localStorage.setItem('email', this.state.email);
         localStorage.setItem('jwtToken', data.message);
         this.props.history.push('/HomePage');
         }
