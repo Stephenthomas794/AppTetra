@@ -6,6 +6,7 @@ from sqlalchemy import select, desc, text
 import requests
 from flask_cors import CORS
 import boto3
+import time
 
 from .extensions import mongo
 from .models import db
@@ -14,7 +15,8 @@ run = Blueprint('run', __name__)
 
 from .models import users
 
-ec2 = boto3.resource('ec2')
+ec2 = boto3.client('ec2')
+ssm = boto3.client('ssm', )
 
 @run.route('/')
 def hello():
@@ -87,23 +89,128 @@ def existingUser(checkEmail):
 @run.route('/api/SubmitProject', methods=['GET', 'POST'])
 def SubmitProject():
     request_data = json.loads(request.data)
-    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'])
-    return jsonify(message=True)    
+    key = amazonKeyStore()
+    instance = launchInstance(key)
+    arrInstance = storeInstance(instance)
+    instanceList = convertSSMList(arrInstance[0]['InstanceId'])
+    print(".....sleeping")
+    time.sleep(250)
+    instanceCommands(instanceList)
+    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance)
+    return jsonify(message=True)
 
-def addEntry(email, projectName, git, time, entries):
+def addEntry(email, projectName, git, time, entries, arrInstance):
     users_collection = mongo.db.users
     users_collection.update_one(
         {"email": email}, {
-            "$push": { 
+            "$push": {
                 "projectName": projectName,
                 "git": git, 
                 "time": time,
-                "entries": entries
+                "entries": entries,
+                "instances": arrInstance
                 }});
+    print("Information: projectName, git, time, entries, instances has been added to MongoDB")
+
+def storeInstance(instance):
+    arr = []
+    for i in instance['Instances']:
+        arr.append(i)
+    print("Turn instance information into array")
+    return arr
+
+def convertSSMList(instance):
+    instanceStr = str(instance)
+    instanceList = list()
+    instanceList.append(instanceStr)
+    print("Instance Name has been converted to List String")
+    print(instanceList)
+    return instanceList
+
 def amazonKeyStore():
-    pass
+#    outputfile = open('ec2-keypair.pem', 'w')
+#    key_pair = ec2.create_key_pair(KeyName='ec2-keypair101')
+#    KeyPairOut = str(key_pair['KeyMaterial'])
+#    print(KeyPairOut)
+#    outputfile.write(KeyPairOut)
+    KeyName='ec2-keypair101'
+    print("Key pair has been called")
+    return KeyName
+
+def amazonSecurityGroup():
+    security = ec2.create_security_group(
+        GroupName = 'Access',
+        Description = '',
+        VpcId = ''
+    )
+    print("Security group has been created")
+    return security
+    
+def launchInstance(key):
+    instance = ec2.run_instances(
+        ImageId='ami-04d29b6f966df1537',
+        MinCount=1,
+        MaxCount=1,
+        InstanceType='t2.micro',
+        KeyName=key,
+        TagSpecifications=[
+            {
+            'ResourceType': 'instance',
+                'Tags': [
+                    {'Key': 'AppTetraKey'
+                    'Value': 'AppTetraKey'},
+            ]}]
+    )
+    print("Instance has been launched")
+    return instance
+
+def instanceCommands(instanceId):
+    commands = ['yum update', 'yum install git', 'yum install docker-compose']
+    sendCommand = ssm.send_command(
+        DocumentName="AWS-RunShellScript",
+        Parameters={'commands': commands},
+        InstanceIds=instanceId,
+    )
+    print("Commands to EC2 Have been sent")
+    return sendCommand
+
+@run.route('/api/Delete', methods=['GET', 'POST'])
+def deleteInstance():
+    # Pass Name of Instances from react to delete
+    ec2.terminate_instances(
+    InstanceIds=[
+        'string',
+    ]
+    )
+
 if __name__ == '__main__':
     run.run(debug=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
