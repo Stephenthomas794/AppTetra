@@ -14,14 +14,23 @@ render(){
     <Nav />
     <Header as='h1'>How to Submit Code to AppTetra</Header>
     <ListGroup>
-        <ListGroup.Item>Always Submit a Github Repo</ListGroup.Item>
+        <ListGroup.Item>1. Code can be submited either via Github or as AWS Lambda</ListGroup.Item>
+        <ListGroup.Item>Currently we can only accept Github</ListGroup.Item>
         <ListGroup.Item></ListGroup.Item>
-        <ListGroup.Item></ListGroup.Item>
-        <ListGroup.Item></ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
+        <ListGroup.Item> </ListGroup.Item>
     </ListGroup>
-    <Header as='h1'>How Will Instances Be Launched</Header>
+    <Header as='h1'>For Github Submission</Header>
     <ListGroup>
-        <ListGroup.Item>Latest Version of Yum</ListGroup.Item>
+        <ListGroup.Item>Docker and Docker-Compose will be installed</ListGroup.Item>
+        <ListGroup.Item>Docker-Compose will be used to launch your application</ListGroup.Item>
     </ListGroup>
     </>
     )

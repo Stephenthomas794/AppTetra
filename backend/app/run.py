@@ -93,7 +93,7 @@ def existingUser(checkEmail):
 def SubmitProject():
     request_data = json.loads(request.data)
     key = amazonKeyStore()
-    instance = launchInstance(key)
+    instance = launchInstance(key, request_data['git'])
     arrInstance = storeInstance(instance)
     print(".....sleeping")
     time.sleep(250)
@@ -133,11 +133,33 @@ def amazonKeyStore():
     print("Key pair has been called")
     return KeyName
 
-def launchInstance(key):
+def launchInstance(key, repoLink):
+    git = repoLink[20:]                       
+    countSlash = 0
+    repoName = ''
+
+    for char in git:
+        if char == '.':
+            break
+        if countSlash == 1:
+            repoName = repoName + char
+        if char == '/':
+            countSlash = countSlash + 1
+
     user_data = '''#!/bin/bash
     sudo yum update -y
     sudo yum install git -y
-    '''
+    sudo yum install docker -y
+    cd /home/ec2-user
+    git clone {}
+    cd {}
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.28.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo service docker start
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    sudo docker-compose up
+    '''.format(repoLink, repoName)
+
     instance = ec2.run_instances(
         ImageId='ami-04d29b6f966df1537',
         MinCount=1,
