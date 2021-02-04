@@ -95,12 +95,8 @@ def SubmitProject():
     key = amazonKeyStore()
     instance = launchInstance(key)
     arrInstance = storeInstance(instance)
-    instanceList = convertSSMList(arrInstance[0]['InstanceId'])
     print(".....sleeping")
-    time.sleep(800)
-    ipAddress = getIPAddress(instanceList)
-#    sshEC2(ipAddress)
-#    instanceCommands(instanceList)
+    time.sleep(250)
     addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance)
     return jsonify(message=True)
 
@@ -133,53 +129,9 @@ def convertSSMList(instance):
     return instanceList
 
 def amazonKeyStore():
-#    outputfile = open('ec2-keypair.pem', 'w')
-#    key_pair = ec2.create_key_pair(KeyName='ec2-keypair101')
-#    KeyPairOut = str(key_pair['KeyMaterial'])
-#    print(KeyPairOut)
-#    outputfile.write(KeyPairOut)
     KeyName='MainKeyPair'
     print("Key pair has been called")
     return KeyName
-
-def amazonSecurityGroup():
-    security = ec2.create_security_group(
-        GroupName = 'Access',
-        Description = '',
-        VpcId = ''
-    )
-    print("Security group has been created")
-    return security
-
-def getIPAddress(instanceList):
-    print('getIPAddress has started')
-    stream = os.popen('aws ec2 describe-instances')
-    output1 = stream.read()
-    output = json.loads(output1)
-    size = len(output['Reservations'][0])
-    for i in range(0,size):
-        instanceName = output['Reservations'][i]['Instances'][0]['InstanceId']
-        print(instanceName)
-        print(instanceList[0])
-        
-        if instanceName == instanceList[0]:
-            ipAddress = output['Reservations'][i]['Instances'][0]['PublicIpAddress']
-            print(ipAddress)
-            return ipAddress
-
-def sshEC2(ipAddress):
-    key = paramiko.RSAKey.from_private_key_file('/Users/stephenthomas/desktop/Keypairs/MainKeyPair.pem')
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    try:
-        client.connect(hostname=ipAddress, username="ec2-user", pkey=key)
-        print("SSH into EC2")
-        stdin, stdout, stderr = client.exec_command('sudo yum update')
-        for line in stdout.read().splitlines():
-            print(line)
-        client.close()
-    except Exception as  e:
-        print (e)
 
 def launchInstance(key):
     user_data = '''#!/bin/bash
@@ -204,16 +156,6 @@ def launchInstance(key):
     print("Instance has been launched")
     return instance
 
-def instanceCommands(instanceId):
-    commands = ['yum update', 'yum install git', 'yum install docker-compose']
-    sendCommand = ssm.send_command(
-        DocumentName="AWS-RunShellScript",
-        Parameters={'commands': commands},
-        InstanceIds=instanceId,
-    )
-    print("Commands to EC2 Have been sent")
-    return sendCommand
-
 @run.route('/api/Delete', methods=['GET', 'POST'])
 def deleteInstance(instance):
     # Pass Name of Instances from react to delete
@@ -224,17 +166,69 @@ if __name__ == '__main__':
     run.run(debug=True)
 
 
+#KEYSTORE
+#    outputfile = open('ec2-keypair.pem', 'w')                                                                                                          
+#    key_pair = ec2.create_key_pair(KeyName='ec2-keypair101')
+#    KeyPairOut = str(key_pair['KeyMaterial'])
+#    print(KeyPairOut)
+#    outputfile.write(KeyPairOut)
 
 
+#    instanceList = convertSSMList(arrInstance[0]['InstanceId'])
+#    ipAddress = getIPAddress(instanceList)
+#    sshEC2(ipAddress)
+#    instanceCommands(instanceList)
 
 
+#def instanceCommands(instanceId):
+#    commands = ['yum update', 'yum install git', 'yum install docker-compose']
+#    sendCommand = ssm.send_command(
+#        DocumentName="AWS-RunShellScript",
+#        Parameters={'commands': commands},
+#        InstanceIds=instanceId,
+#    )                                                                                                                                                  
+#    print("Commands to EC2 Have been sent")
+#    return sendCommand
 
 
+#def amazonSecurityGroup():
+#    security = ec2.create_security_group(
+#        GroupName = 'Access',
+#        Description = '',
+#        VpcId = ''
+#    )
+#    print("Security group has been created")
+#    return security
 
+#def getIPAddress(instanceList):
+#    print('getIPAddress has started')
+#    stream = os.popen('aws ec2 describe-instances')
+#    output1 = stream.read()
+#    output = json.loads(output1)
+#    size = len(output['Reservations'][0])
+#    for i in range(0,size):
+#        instanceName = output['Reservations'][i]['Instances'][0]['InstanceId']
+#        print(instanceName)
+#        print(instanceList[0])
+#        
+#        if instanceName == instanceList[0]:
+#            ipAddress = output['Reservations'][i]['Instances'][0]['PublicIpAddress']
+#            print(ipAddress)
+#            return ipAddress
 
-
-
-
+#def sshEC2(ipAddress):
+#    key = paramiko.RSAKey.from_private_key_file('/Users/stephenthomas/desktop/Keypairs/MainKeyPair.pem')
+#    client = paramiko.SSHClient()
+#    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+#    try:
+#        client.connect(hostname=ipAddress, username="ec2-user", pkey=key)
+#        print("SSH into EC2")
+#        stdin, stdout, stderr = client.exec_command('sudo yum update')
+#        for line in stdout.read().splitlines():
+#            print(line)
+#        client.close()
+#    except Exception as  e:
+#        print (e)
 
 
 
