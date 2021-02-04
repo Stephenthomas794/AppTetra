@@ -7,6 +7,9 @@ import requests
 from flask_cors import CORS
 import boto3
 import time
+import os
+import json
+import paramiko
 
 from .extensions import mongo
 from .models import db
@@ -16,7 +19,7 @@ run = Blueprint('run', __name__)
 from .models import users
 
 ec2 = boto3.client('ec2')
-ssm = boto3.client('ssm', )
+ssm = boto3.client('ssm',region_name='us-east-1')
 
 @run.route('/')
 def hello():
@@ -94,8 +97,10 @@ def SubmitProject():
     arrInstance = storeInstance(instance)
     instanceList = convertSSMList(arrInstance[0]['InstanceId'])
     print(".....sleeping")
-    time.sleep(250)
-    instanceCommands(instanceList)
+    time.sleep(800)
+    ipAddress = getIPAddress(instanceList)
+    sshEC2(ipAddress)
+#    instanceCommands(instanceList)
     addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance)
     return jsonify(message=True)
 
@@ -133,7 +138,7 @@ def amazonKeyStore():
 #    KeyPairOut = str(key_pair['KeyMaterial'])
 #    print(KeyPairOut)
 #    outputfile.write(KeyPairOut)
-    KeyName='ec2-keypair101'
+    KeyName='MainKeyPair'
     print("Key pair has been called")
     return KeyName
 
@@ -145,7 +150,36 @@ def amazonSecurityGroup():
     )
     print("Security group has been created")
     return security
-    
+
+def getIPAddress(instanceList):
+    print('getIPAddress has started')
+    stream = os.popen('aws ec2 describe-instances')
+    output1 = stream.read()
+    output = json.loads(output1)
+    size = len(output['Reservations'][0])
+    for i in range(0,size):
+        instanceName = output['Reservations'][i]['Instances'][0]['InstanceId']
+        print(instanceName)
+        print(instanceList[0])
+        if instanceName == instanceList[0]:
+            ipAddress = output['Reservations'][i]['Instances'][0]['PublicIpAddress']
+            print(ipAddress)
+            return ipAddress
+
+def sshEC2(ipAddress):
+    key = paramiko.RSAKey.from_private_key_file('/Users/stephenthomas/desktop/Keypairs/MainKeyPair.pem')
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(hostname=ipAddress, username="ec2-user", pkey=key)
+        print("SSH into EC2")
+        stdin, stdout, stderr = client.exec_command('sudo yum update')
+        for line in stdout.read().splitlines():
+            print(line)
+        client.close()
+    except Exception as  e:
+        print (e)
+
 def launchInstance(key):
     instance = ec2.run_instances(
         ImageId='ami-04d29b6f966df1537',
@@ -155,10 +189,10 @@ def launchInstance(key):
         KeyName=key,
         TagSpecifications=[
             {
-            'ResourceType': 'instance',
-                'Tags': [
-                    {'Key': 'AppTetraKey'
-                    'Value': 'AppTetraKey'},
+            'ResourceType' : 'instance',
+                'Tags' : [
+                    {'Key' : 'AppTetraKey',
+                    'Value' : 'AppTetraKey'},
             ]}]
     )
     print("Instance has been launched")
@@ -175,13 +209,10 @@ def instanceCommands(instanceId):
     return sendCommand
 
 @run.route('/api/Delete', methods=['GET', 'POST'])
-def deleteInstance():
+def deleteInstance(instance):
     # Pass Name of Instances from react to delete
-    ec2.terminate_instances(
-    InstanceIds=[
-        'string',
-    ]
-    )
+    ids = []
+    ec2.instances.filter(InstanceIds=ids).terminate()
 
 if __name__ == '__main__':
     run.run(debug=True)
