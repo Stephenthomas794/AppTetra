@@ -5,6 +5,7 @@ import LoginPage from './Pages/LoginPage/LoginPage';
 import Documentation from './Pages/Documentation/Documentation';
 import HomePage from './Pages/HomePage/HomePage';
 import SubmitProject from './Pages/SubmitProject/SubmitProject';
+import LoadingPage from './Pages/LoadingPage/LoadingPage';
 
 import './App.css';
 
@@ -24,6 +25,7 @@ class App extends Component {
             <Route path="/Documentation" component= { Documentation } />
             <Route path="/HomePage" component={ HomePage } />
             <Route path="/SubmitProject" component= { SubmitProject } />
+            <Route path="/LoadingPage" component={ LoadingPage } />
         </Switch>
     </div>
   );

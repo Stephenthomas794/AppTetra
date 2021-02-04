@@ -95,8 +95,6 @@ def SubmitProject():
     key = amazonKeyStore()
     instance = launchInstance(key, request_data['git'])
     arrInstance = storeInstance(instance)
-    print(".....sleeping")
-    time.sleep(250)
     addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance)
     return jsonify(message=True)
 

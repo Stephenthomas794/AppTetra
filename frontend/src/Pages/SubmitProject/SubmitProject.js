@@ -52,7 +52,6 @@ class SubmitProject extends Component {
     handleFormSubmit(event){
         event.preventDefault();
         const email = localStorage.getItem('email')
-        console.log(this.state.time)
         const data = { email: email, projectName: this.state.projectName, git: this.state.git, time: this.state.time, entries: this.state.entries }
         fetch(`http://127.0.0.1:5000/api/SubmitProject`, {
             crossDomain: true,
@@ -67,7 +66,7 @@ class SubmitProject extends Component {
             .then(response => response.json())
             .then(data => {
             console.log('Success', data);
-            
+            this.props.history.push('/LoadingPage');
             })
         }
     
