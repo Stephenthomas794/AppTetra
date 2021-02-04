@@ -99,7 +99,7 @@ def SubmitProject():
     print(".....sleeping")
     time.sleep(800)
     ipAddress = getIPAddress(instanceList)
-    sshEC2(ipAddress)
+#    sshEC2(ipAddress)
 #    instanceCommands(instanceList)
     addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance)
     return jsonify(message=True)
@@ -161,6 +161,7 @@ def getIPAddress(instanceList):
         instanceName = output['Reservations'][i]['Instances'][0]['InstanceId']
         print(instanceName)
         print(instanceList[0])
+        
         if instanceName == instanceList[0]:
             ipAddress = output['Reservations'][i]['Instances'][0]['PublicIpAddress']
             print(ipAddress)
@@ -181,12 +182,17 @@ def sshEC2(ipAddress):
         print (e)
 
 def launchInstance(key):
+    user_data = '''#!/bin/bash
+    sudo yum update -y
+    sudo yum install git -y
+    '''
     instance = ec2.run_instances(
         ImageId='ami-04d29b6f966df1537',
         MinCount=1,
         MaxCount=1,
         InstanceType='t2.micro',
         KeyName=key,
+        UserData=user_data,
         TagSpecifications=[
             {
             'ResourceType' : 'instance',
