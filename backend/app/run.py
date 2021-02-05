@@ -182,9 +182,28 @@ def deleteInstance(instance):
     ids = []
     ec2.instances.filter(InstanceIds=ids).terminate()
 
+@run.route('/api/Projects', methods=['GET', 'POST'])
+def sendProjects():
+    gitArr = list()
+    projectNameArr = list()
+    entriesArr = list()
+    timeArr = list()
+    request_data = json.loads(request.data)
+    users_collection = mongo.db.users
+    check = users_collection.find_one({"email": request_data['email']})
+    val = len(check)
+    if val > 2:
+        result = users_collection.find({"email": request_data['email']})
+        for r in result:
+            gitArr.append(r['git'])
+            projectNameArr.append(r['projectName'])
+            entriesArr.append(r['entries'])
+            timeArr.append(r['time'])
+        return jsonify(projectName=projectNameArr, git=gitArr, time=timeArr, entries=entriesArr)
+    else:
+        return jsonify(message=False)
 if __name__ == '__main__':
     run.run(debug=True)
-
 
 #KEYSTORE
 #    outputfile = open('ec2-keypair.pem', 'w')                                                                                                          
