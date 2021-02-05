@@ -202,6 +202,16 @@ def sendProjects():
         return jsonify(projectName=projectNameArr, git=gitArr, time=timeArr, entries=entriesArr)
     else:
         return jsonify(message=False)
+
+@run.route('/api/SearchProjects', methods=['GET', 'POST'])
+def searchProjects():
+    request_data = json.loads(request.data)
+    users_collection = mongo.db.users
+    check = users_collection.find({"projectName": request_data['searchValue']})
+    for item in check:
+        print(item)
+    return jsonify(message=True)
+
 if __name__ == '__main__':
     run.run(debug=True)
 

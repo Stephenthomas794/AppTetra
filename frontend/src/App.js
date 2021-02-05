@@ -6,6 +6,7 @@ import Documentation from './Pages/Documentation/Documentation';
 import HomePage from './Pages/HomePage/HomePage';
 import SubmitProject from './Pages/SubmitProject/SubmitProject';
 import LoadingPage from './Pages/LoadingPage/LoadingPage';
+import Results from '/Pages/Results/Results';
 
 import './App.css';
 
@@ -26,6 +27,7 @@ class App extends Component {
             <Route path="/HomePage" component={ HomePage } />
             <Route path="/SubmitProject" component= { SubmitProject } />
             <Route path="/LoadingPage" component={ LoadingPage } />
+            <Route path="/Results" component= { Results }
         </Switch>
     </div>
   );
