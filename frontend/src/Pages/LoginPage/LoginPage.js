@@ -16,7 +16,6 @@ class LoginPage extends Component {
     render(){
     return(
         <div className="LoginPage">
-        <Nav />
         <header className="LoginPage-header">
         <Table striped bordered hover variant="dark">
             <thead>

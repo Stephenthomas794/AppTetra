@@ -86,7 +86,6 @@ class SubmitProject extends Component {
     render() {
     return (
         <div className= 'SubmitProject'>
-        <Nav />
         <Form onSubmit={this.handleFormSubmit}>
   
   <Form.Group controlId="exampleForm.ControlTextarea1">

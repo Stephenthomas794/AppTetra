@@ -93,7 +93,6 @@ Project Name: {projectName[i]}
     render(){
     return (
         <>
-        <Nav />
         <Button href="/SubmitProject"variant="primary">Submit A Project</Button>
         <Projects list={ this.state.list } handleLoad= { this.handleLoad} />
         </>

@@ -208,9 +208,10 @@ def searchProjects():
     request_data = json.loads(request.data)
     users_collection = mongo.db.users
     check = users_collection.find({"projectName": request_data['searchValue']})
+    resultArr = list()
     for item in check:
-        print(item)
-    return jsonify(message=True)
+        resultArr.append(item['projectName'])
+    return jsonify(message=resultArr)
 
 if __name__ == '__main__':
     run.run(debug=True)

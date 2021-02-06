@@ -48,6 +48,8 @@ class Nav extends Component {
             .then(response => response.json())
             .then(data => {
             console.log('Success', data);
+            console.log(data.message)
+            this.props.setProjectName(data.message[0])
             this.props.history.push('/Results');
         })
         }

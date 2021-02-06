@@ -11,7 +11,6 @@ render(){
 
     return (
     <>
-    <Nav />
     <Header as='h1'>How to Submit Code to AppTetra</Header>
     <ListGroup>
         <ListGroup.Item>1. Code can be submited either via Github or as AWS Lambda</ListGroup.Item>
