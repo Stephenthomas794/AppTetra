@@ -15,6 +15,7 @@ class Results extends Component {
         this.handleLoad = this.handleLoad.bind(this);
         this.handlePopulate = this.handlePopulate.bind(this);
         this.updateList = this.updateList.bind(this);
+        this.handleViewProject = this.handleViewProject.bind(this);
     }
 
     updateList(list){
@@ -29,10 +30,12 @@ class Results extends Component {
 
     handleLoad(){
         var projectName = this.props.projectName;
+        var projectID = this.props.projectID;
+        console.log(projectID)
         var list = [];
         if (projectName){
         for (var i = 0; i <= projectName.length; i++){
-            list.push(this.handlePopulate(projectName, i))
+            list.push(this.handlePopulate(projectName, projectID, i))
             console.log(projectName[i])
         }
         this.setState({
@@ -43,7 +46,15 @@ class Results extends Component {
 
     }
 }
-    handlePopulate(projectName, i){
+
+    handleViewProject(event, i){
+        console.log(event.target.value)
+        this.props.setProjectID(event.target.value)
+        this.props.history.push("/ProjectProfile")
+        //Send Project Number to next Page to pull data for project
+    }
+
+    handlePopulate(projectName,projectID, i){
     return(
      <Table striped bordered hover variant="dark" key={i}>
     <thead>
@@ -59,7 +70,7 @@ class Results extends Component {
   Description Here 
     </td>
         <td>
-        <Button variant="primary">View Project</Button>
+        <Button value={projectID[i]} onClick={event => this.handleViewProject(event, "value")}variant="primary">View Project</Button>
         </td>
         </tr>
     </tbody>

@@ -8,17 +8,27 @@ import SubmitProject from './Pages/SubmitProject/SubmitProject';
 import LoadingPage from './Pages/LoadingPage/LoadingPage';
 import Results from './Pages/Results/Results';
 import Nav from './Components/Nav/Nav';
+import ProjectProfile from './Pages/ProjectProfile/ProjectProfile';
+
 import './App.css';
 
 class App extends Component {
   constructor () {                                                                                                                  
   super();
   this.state = { 
-    projectName: undefined        
+    projectName: undefined,        
+    projectID: undefined
   }
     this.setProjectName = this.setProjectName.bind(this)
+    this.setProjectID = this.setProjectID.bind(this);
   }
 
+    setProjectID(projectID){
+        this.setState({
+            projectID: projectID
+        })
+        console.log(this.state.projectID)
+    }
     setProjectName(projectName){
         this.setState({
             projectName: projectName
@@ -29,14 +39,17 @@ class App extends Component {
   render(){
   return (
     <div className="App">
-        <Nav setProjectName={this.setProjectName}/>
+        <Nav setProjectID={this.setProjectID} setProjectName={this.setProjectName}/>
         <Switch> 
             <Route path="/" component= { LoginPage } exact />
             <Route path="/Documentation" component= { Documentation } />
             <Route path="/HomePage" component={ HomePage } />
             <Route path="/SubmitProject" component= { SubmitProject } />
             <Route path="/LoadingPage" component={ LoadingPage } />
-            <Route path="/Results" component={(routeProps)=> <Results projectName={this.state.projectName} {...routeProps} />} />
+            <Route path="/Results" component={(routeProps)=> <Results setProjectID={this.setProjectID} projectID={this.state.projectID} projectName={this.state.projectName} {...routeProps} />} 
+            /> 
+            <Route path="/ProjectProfile" component={(routeProps)=> <ProjectProfile projectID={this.state.projectID} projectName={this.state.projectName} {...routeProps} />} 
+             /> 
         </Switch>
     </div>
   );

@@ -10,6 +10,7 @@ import time
 import os
 import json
 import paramiko
+import random 
 
 from .extensions import mongo
 from .models import db
@@ -95,10 +96,15 @@ def SubmitProject():
     key = amazonKeyStore()
     instance = launchInstance(key, request_data['git'])
     arrInstance = storeInstance(instance)
-    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance)
+    projectID = generateProjectID()
+    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance, projectID)
     return jsonify(message=True)
 
-def addEntry(email, projectName, git, time, entries, arrInstance):
+def generateProjectID():
+    val = random.randint(0, 100000000000000)
+    return val
+
+def addEntry(email, projectName, git, time, entries, arrInstance, projectID):
     users_collection = mongo.db.users
     users_collection.update_one(
         {"email": email}, {
@@ -107,7 +113,8 @@ def addEntry(email, projectName, git, time, entries, arrInstance):
                 "git": git, 
                 "time": time,
                 "entries": entries,
-                "instances": arrInstance
+                "instances": arrInstance,
+                "projectID": projectID
                 }});
     print("Information: projectName, git, time, entries, instances has been added to MongoDB")
 
@@ -206,12 +213,24 @@ def sendProjects():
 @run.route('/api/SearchProjects', methods=['GET', 'POST'])
 def searchProjects():
     request_data = json.loads(request.data)
-    users_collection = mongo.db.users
-    check = users_collection.find({"projectName": request_data['searchValue']})
+    check = searchMongo(request_data['searchValue'])
     resultArr = list()
+    IDArr = list()
+    count = 0
     for item in check:
-        resultArr.append(item['projectName'])
-    return jsonify(message=resultArr)
+        for i in item['projectName']:
+            if i == request_data['searchValue']:
+                print(item['projectID'][count])
+                resultArr.append(i)
+                IDArr.append(item['projectID'][count])
+            count = count + 1
+    return jsonify(message=resultArr, projectID=IDArr)
+
+def searchMongo(searchQuery):
+    users_collection = mongo.db.users
+    check = users_collection.find( {"projectName": searchQuery})
+    return check
+
 
 if __name__ == '__main__':
     run.run(debug=True)
