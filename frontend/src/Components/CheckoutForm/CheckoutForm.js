@@ -68,7 +68,7 @@ export default function CheckoutForm(props) {
       setError(null);
       setProcessing(false);
       setSucceeded(true);
-        const data = {projectName: props.projectName, projectID: props.projectID}
+        const data = {email:localStorage.getItem('email'), projectName: props.projectName, projectID: props.projectID}
         fetch(`http://127.0.0.1:5000/api/AddPurchase`, {
             crossDomain: true,
             mode: 'cors',

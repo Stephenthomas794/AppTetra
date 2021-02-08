@@ -57,7 +57,7 @@ def existingUser(checkEmail):
 
 def mongoDBUser(email):
     users_collection = mongo.db.users
-    users_collection.insert({'email' : email})
+    users_collection.insert({'email' : email, 'purchases': [], 'time':[], 'entries': [], 'projectName':[], 'git': [], 'inUse': [], 'projectID': []})
     return
 
 @run.route('/api/signIn', methods=['GET','POST'])
@@ -101,7 +101,7 @@ def SubmitProject():
     instance = launchInstance(key, request_data['git'])
     arrInstance = storeInstance(instance)
     projectID = generateProjectID()
-    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], arrInstance, projectID)
+    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], projectID)
     return jsonify(message=True)
 
 def generateProjectID():
@@ -120,7 +120,7 @@ def addEntry(email, projectName, git, time, entries, arrInstance, projectID):
                 "instances": arrInstance,
                 "projectID": projectID
                 }});
-    print("Information: projectName, git, time, entries, instances has been added to MongoDB")
+    print("Information: projectName, git, time, entries, and projectID have been Added to MongoDB")
 
 def storeInstance(instance):
     arr = []
@@ -199,6 +199,8 @@ def sendProjects():
     projectNameArr = list()
     entriesArr = list()
     timeArr = list()
+    purchasesArr = list()
+    inUseArr = list()
     request_data = json.loads(request.data)
     users_collection = mongo.db.users
     check = users_collection.find_one({"email": request_data['email']})
@@ -210,7 +212,9 @@ def sendProjects():
             projectNameArr.append(r['projectName'])
             entriesArr.append(r['entries'])
             timeArr.append(r['time'])
-        return jsonify(projectName=projectNameArr, git=gitArr, time=timeArr, entries=entriesArr)
+            purchasesArr.append(r['purchases'])
+            inUseArr.append(r['inUse'])
+        return jsonify(projectName=projectNameArr, git=gitArr, time=timeArr, entries=entriesArr, purchases=purchasesArr, inUse=inUseArr)
     else:
         return jsonify(message=False)
 
@@ -273,9 +277,16 @@ def addPurchase():
     request_data = json.loads(request.data)
     print(request_data['projectID'])
     users_collection = mongo.db.users
-    #ProjectName, Price
+    users_collection.update_one(
+        { "email": request_data['email']},
+        { "$push":
+            {
+                "purchases": request_data['projectID']
+            }
+        }
+    ) 
     return jsonify(message=True)
-    
+
 if __name__ == '__main__':
     run.run(debug=True)
 
@@ -346,9 +357,79 @@ if __name__ == '__main__':
 
 
 
+##################################################
+##################################################
+#    key = amazonKeyStore()
+#    instance = launchInstance(key, request_data['git'])
+#    arrInstance = storeInstance(instance)
 
+"""
+def storeInstance(instance):
+    arr = []
+    for i in instance['Instances']:
+        arr.append(i)
+    print("Turn instance information into array")
+    return arr
 
+def convertSSMList(instance):
+    instanceStr = str(instance)
+    instanceList = list()
+    instanceList.append(instanceStr)
+    print("Instance Name has been converted to List String")
+    print(instanceList)
+    return instanceList
 
+def amazonKeyStore():
+    KeyName='MainKeyPair'
+    print("Key pair has been called")
+    return KeyName
+
+def launchInstance(key, repoLink):
+    git = repoLink[20:]
+    countSlash = 0
+    repoName = ''
+
+    for char in git:
+        if char == '.':
+            break
+        if countSlash == 1:
+            repoName = repoName + char
+        if char == '/':
+            countSlash = countSlash + 1
+
+    user_data = '''#!/bin/bash
+    sudo yum update -y
+    sudo yum install git -y
+    sudo yum install docker -y
+    cd /home/ec2-user
+    git clone {}
+    cd {}
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.28.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo service docker start
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    sudo docker-compose up
+    '''.format(repoLink, repoName)
+
+    instance = ec2.run_instances(
+        ImageId='ami-04d29b6f966df1537',
+        MinCount=1,
+        MaxCount=1,
+        InstanceType='t2.micro',
+        KeyName=key,
+        UserData=user_data,
+        TagSpecifications=[
+            {
+            'ResourceType' : 'instance',
+                'Tags' : [
+                    {'Key' : 'AppTetraKey',
+                    'Value' : 'AppTetraKey'},
+            ]}]
+    )
+    print("Instance has been launched")
+    return instance
+
+"""
 
 
 
