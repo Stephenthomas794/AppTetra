@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import Button from 'react-bootstrap/Button';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Table from 'react-bootstrap/Table';
+import { Header } from 'semantic-ui-react'
 
 import Nav from '../../Components/Nav/Nav';
 import Projects from '../../Components/Projects/Projects';
@@ -94,7 +95,9 @@ Project Name: {projectName[i]}
     return (
         <>
         <Button href="/SubmitProject"variant="primary">Submit A Project</Button>
+        <Header as='h1'>Your Projects</Header>
         <Projects list={ this.state.list } handleLoad= { this.handleLoad} />
+        <Header as='h1'>Your Purchases</Header> 
         </>
     )
     }

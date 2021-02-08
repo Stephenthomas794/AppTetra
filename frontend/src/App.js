@@ -9,6 +9,7 @@ import LoadingPage from './Pages/LoadingPage/LoadingPage';
 import Results from './Pages/Results/Results';
 import Nav from './Components/Nav/Nav';
 import ProjectProfile from './Pages/ProjectProfile/ProjectProfile';
+import Purchase from './Pages/Purchase/Purchase';
 
 import './App.css';
 
@@ -50,6 +51,8 @@ class App extends Component {
             /> 
             <Route path="/ProjectProfile" component={(routeProps)=> <ProjectProfile projectID={this.state.projectID} projectName={this.state.projectName} {...routeProps} />} 
              /> 
+            <Route path="/Purchase" component={(routeProps)=> <Purchase projectID={this.state.projectID} projectName={this.state.projectName} {...routeProps} />} 
+             />  
         </Switch>
     </div>
   );

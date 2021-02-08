@@ -15,6 +15,10 @@ import random
 from .extensions import mongo
 from .models import db
 
+import stripe
+# This is your real test secret API key.
+stripe.api_key = "sk_test_51IILoMEapMBXivyEFUo3RGf0gAnpzctdT5ZupkD0p748SGlD8HRuRXS51LSWYJgqKYsQwXSYQy3Zfd4jsPYVom3X00tCbg9Vm2"
+
 run = Blueprint('run', __name__)
 
 from .models import users
@@ -213,24 +217,58 @@ def sendProjects():
 @run.route('/api/SearchProjects', methods=['GET', 'POST'])
 def searchProjects():
     request_data = json.loads(request.data)
-    check = searchMongo(request_data['searchValue'])
+    users_collection = mongo.db.users
+    check = users_collection.find({"projectName": request_data['searchValue']})
     resultArr = list()
     IDArr = list()
     count = 0
     for item in check:
+        count = 0 
         for i in item['projectName']:
             if i == request_data['searchValue']:
-                print(item['projectID'][count])
                 resultArr.append(i)
                 IDArr.append(item['projectID'][count])
             count = count + 1
     return jsonify(message=resultArr, projectID=IDArr)
 
-def searchMongo(searchQuery):
+@run.route('/api/GetProjectInfo', methods=['GET', 'POST'])
+def getProjectID():
+    request_data = json.loads(request.data)
     users_collection = mongo.db.users
-    check = users_collection.find( {"projectName": searchQuery})
-    return check
+    check = users_collection.find({"projectID": request_data['projectID']})
+    arr = list( users_collection.find())
+    for item in arr:
+        count = 0
+        for i in item["projectID"]:
+            print(type(i))
+            print(request_data['projectID'])
+            if str(i) == request_data['projectID']:               
+                return jsonify(projectName=item['projectName'][count])
+                print("matched")
+            count = count + 1
+    return jsonify(message=False)
 
+@run.route('/create-payment-intent', methods=['POST'])
+def create_payment():
+    try:
+        data = json.loads(request.data)
+        intent = stripe.PaymentIntent.create(
+            amount=calculate_order_amount(data['items']),
+            currency='usd'
+        )
+        return jsonify({
+          'clientSecret': intent['client_secret']
+        })
+    except Exception as e:
+        return jsonify(error=str(e)), 403
+
+def calculate_order_amount(items):
+    # Replace this constant with a calculation of the order's amount
+    # Calculate the order total on the server to prevent
+    # people from directly manipulating the amount on the client
+    return 1400
+
+ 
 
 if __name__ == '__main__':
     run.run(debug=True)

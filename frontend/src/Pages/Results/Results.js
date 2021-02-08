@@ -34,7 +34,7 @@ class Results extends Component {
         console.log(projectID)
         var list = [];
         if (projectName){
-        for (var i = 0; i <= projectName.length; i++){
+        for (var i = 0; i < projectName.length; i++){
             list.push(this.handlePopulate(projectName, projectID, i))
             console.log(projectName[i])
         }
