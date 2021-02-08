@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import history from '../../history'
 import {
   CardElement,
   useStripe,
   useElements
 } from "@stripe/react-stripe-js";
-export default function CheckoutForm() {
+export default function CheckoutForm(props) {
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState('');
@@ -67,8 +68,26 @@ export default function CheckoutForm() {
       setError(null);
       setProcessing(false);
       setSucceeded(true);
+        const data = {projectName: props.projectName, projectID: props.projectID}
+        fetch(`http://127.0.0.1:5000/api/AddPurchase`, {
+            crossDomain: true,
+            mode: 'cors',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },  
+            body: JSON.stringify(data),
+            })  
+            .then(response => response.json())
+            .then(data => {
+            console.log('Success', data);
+        })  
+    history.push("/HomePage");
+
     }
-  };
+        
+ };
   return (
     <form id="payment-form" onSubmit={handleSubmit}>
       <CardElement id="card-element" options={cardStyle} onChange={handleChange} />

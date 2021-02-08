@@ -268,8 +268,14 @@ def calculate_order_amount(items):
     # people from directly manipulating the amount on the client
     return 1400
 
- 
-
+@run.route('/api/AddPurchase', methods=['GET', 'POST'])
+def addPurchase():
+    request_data = json.loads(request.data)
+    print(request_data['projectID'])
+    users_collection = mongo.db.users
+    #ProjectName, Price
+    return jsonify(message=True)
+    
 if __name__ == '__main__':
     run.run(debug=True)
 
