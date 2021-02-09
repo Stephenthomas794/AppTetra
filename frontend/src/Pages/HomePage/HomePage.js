@@ -7,6 +7,7 @@ import { Header } from 'semantic-ui-react'
 import Nav from '../../Components/Nav/Nav';
 import Projects from '../../Components/Projects/Projects';
 import Purchases from '../../Components/Purchases/Purchases';
+import Running from '../../Components/Running/Running';
 
 class HomePage extends Component {
     constructor() {
@@ -14,13 +15,17 @@ class HomePage extends Component {
     this.state = {
         email: undefined,       
         list: [],
-        listOfPurchases: []
+        listOfPurchases: [],
+        listOfRunning: []
         }
         this.updateList = this.updateList.bind(this);
   //      this.updateListOfPurchases = this.updateListOfPurchases.bind(this);
         this.handleLoad = this.handleLoad.bind(this);
         this.handlePopulate = this.handlePopulate.bind(this);
         this.handlePopulateOfPurchases = this.handlePopulateOfPurchases.bind(this);
+        this.handlePopulateOfRunning = this.handlePopulateOfRunning.bind(this);
+        this.handleRun = this.handleRun.bind(this);
+        this.handleStop = this.handleStop.bind(this);
     }
     
     updateList(list){
@@ -63,6 +68,7 @@ class HomePage extends Component {
             console.log(len)
             var list = [];
             var listOfPurchases = [];
+            var listOfRunning = [];
             for (var i = 0; i < len; i++){
                 list.push(this.handlePopulate(data['projectName'][0], data['git'][0], data['time'][0], data['entries'][0], i))
             }
@@ -72,11 +78,19 @@ class HomePage extends Component {
                 console.log(size)
                 console.log(data['purchases'][0])
             }
+            const sizeRunning = data['inUse'][0].length;
+            for (var i = 0; i < sizeRunning; i++){
+                listOfRunning.push(this.handlePopulateOfRunning(data['inUse'][0], i))
+                console.log(size)
+            }
             this.setState({
                 list: list
             })
             this.setState({
                 listOfPurchases: listOfPurchases
+            })
+            this.setState({
+                listOfRunning: listOfRunning
             })
             this.updateList(list)
     //        this.updateListOfPurchases(listOfPurchases)
@@ -84,8 +98,45 @@ class HomePage extends Component {
         }
     }
     )
+    }
 
+    handleRun(event, i){
+        console.log(event.target.value)
+        const data = { projectID: event.target.value, email: localStorage.getItem('email') }
+        fetch(`http://127.0.0.1:5000/api/RunProgram`, {
+            crossDomain: true,
+            mode: 'cors',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+            console.log('Success', data);
+            this.props.history.push('/LoadingPage');
+            })
+    }
 
+    handleStop(event, i){
+        console.log(event.target.value);
+        const data = { inUse: event.target.value, email: localStorage.getItem('email') }
+        fetch(`http://127.0.0.1:5000/api/StopProgram`, {
+            crossDomain: true,
+            mode: 'cors',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },      
+            body: JSON.stringify(data),
+            })  
+            .then(response => response.json())
+            .then(data => {
+            console.log('Success', data);
+            })  
     }
 
     handlePopulate(projectName, git, time, entries, i){
@@ -137,8 +188,8 @@ Project Name:
         </tr>
     <tr>
         <td>
- <Button variant="primary">Run Program</Button>
- <Button variant="danger">Stop Program</Button>    
+ <Button value={projectID[i]} onClick={event => this.handleRun(event, "value")} variant="primary">Run Program</Button>
+ <Button value={inUse[i]} onClick={event => this.handleStop(event, "value")} variant="danger">Stop Program</Button>
     </td>
         </tr>
     </tbody>
@@ -146,6 +197,26 @@ Project Name:
     )
     }
 
+    handlePopulateOfRunning(inUse, i){
+    return(
+           <Table striped bordered hover variant="dark" key={i}>
+    <thead>
+        <tr>
+<th colSpan="2">
+Project Name: 
+   </th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+        <td colSpan="2">
+  ProjectID: {inUse[i]}
+    </td>
+    </tr>
+    </tbody>
+    </Table>
+    )   
+    }
     render(){
     return (
         <>
@@ -155,6 +226,7 @@ Project Name:
         <Header as='h1'>Your Purchases</Header> 
         <Purchases listOfPurchases={ this.state.listOfPurchases } handleLoad= { this.handleLoad} />
         <Header as='h1'>Running Programs</Header>  
+        <Running listOfRunning={ this.state.listOfRunning } handleLoad= { this.handleLoad} />
         </>
     )
     }

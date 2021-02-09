@@ -66,8 +66,8 @@ class SubmitProject extends Component {
             .then(response => response.json())
             .then(data => {
             console.log('Success', data);
-            this.props.history.push('/LoadingPage');
-            })
+            this.props.history.push('/HomePage');  
+        })
         }
     
 

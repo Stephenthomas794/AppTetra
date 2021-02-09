@@ -97,9 +97,6 @@ def existingUser(checkEmail):
 @run.route('/api/SubmitProject', methods=['GET', 'POST'])
 def SubmitProject():
     request_data = json.loads(request.data)
-    key = amazonKeyStore()
-    instance = launchInstance(key, request_data['git'])
-    arrInstance = storeInstance(instance)
     projectID = generateProjectID()
     addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], projectID)
     return jsonify(message=True)
@@ -108,7 +105,7 @@ def generateProjectID():
     val = random.randint(0, 100000000000000)
     return val
 
-def addEntry(email, projectName, git, time, entries, arrInstance, projectID):
+def addEntry(email, projectName, git, time, entries, projectID):
     users_collection = mongo.db.users
     users_collection.update_one(
         {"email": email}, {
@@ -117,75 +114,9 @@ def addEntry(email, projectName, git, time, entries, arrInstance, projectID):
                 "git": git, 
                 "time": time,
                 "entries": entries,
-                "instances": arrInstance,
                 "projectID": projectID
                 }});
     print("Information: projectName, git, time, entries, and projectID have been Added to MongoDB")
-
-def storeInstance(instance):
-    arr = []
-    for i in instance['Instances']:
-        arr.append(i)
-    print("Turn instance information into array")
-    return arr
-
-def convertSSMList(instance):
-    instanceStr = str(instance)
-    instanceList = list()
-    instanceList.append(instanceStr)
-    print("Instance Name has been converted to List String")
-    print(instanceList)
-    return instanceList
-
-def amazonKeyStore():
-    KeyName='MainKeyPair'
-    print("Key pair has been called")
-    return KeyName
-
-def launchInstance(key, repoLink):
-    git = repoLink[20:]                       
-    countSlash = 0
-    repoName = ''
-
-    for char in git:
-        if char == '.':
-            break
-        if countSlash == 1:
-            repoName = repoName + char
-        if char == '/':
-            countSlash = countSlash + 1
-
-    user_data = '''#!/bin/bash
-    sudo yum update -y
-    sudo yum install git -y
-    sudo yum install docker -y
-    cd /home/ec2-user
-    git clone {}
-    cd {}
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.28.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
-    sudo service docker start
-    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-    sudo docker-compose up
-    '''.format(repoLink, repoName)
-
-    instance = ec2.run_instances(
-        ImageId='ami-04d29b6f966df1537',
-        MinCount=1,
-        MaxCount=1,
-        InstanceType='t2.micro',
-        KeyName=key,
-        UserData=user_data,
-        TagSpecifications=[
-            {
-            'ResourceType' : 'instance',
-                'Tags' : [
-                    {'Key' : 'AppTetraKey',
-                    'Value' : 'AppTetraKey'},
-            ]}]
-    )
-    print("Instance has been launched")
-    return instance
 
 @run.route('/api/Delete', methods=['GET', 'POST'])
 def deleteInstance(instance):
@@ -205,6 +136,7 @@ def sendProjects():
     users_collection = mongo.db.users
     check = users_collection.find_one({"email": request_data['email']})
     val = len(check)
+    print(val)
     if val > 2:
         result = users_collection.find({"email": request_data['email']})
         for r in result:
@@ -287,6 +219,145 @@ def addPurchase():
     ) 
     return jsonify(message=True)
 
+@run.route('/api/RunProgram', methods=['GET', 'POST'])
+def runProgram():
+    request_data = json.loads(request.data)
+    information = findProgramInfo(request_data['projectID']) 
+    key = amazonKeyStore()
+    instance = launchInstance(key, information[0])
+    arrInstance = storeInstance(instance)
+    addInstanceMongo(request_data['email'], arrInstance)
+    addInUse(request_data['email'], request_data['projectID'])
+    return jsonify(message=True)
+
+def addInstanceMongo(email, instanceInfo):
+    #Add arrInstance (instance info) to user's document
+    users_collection = mongo.db.users
+    users_collection.update_one(
+        { "email": email},
+        { "$push":
+            {   
+                "instances": instanceInfo
+            }   
+        }   
+    )   
+    return
+
+def addInUse(email, projectID):
+    users_collection = mongo.db.users
+    users_collection.update_one(
+        { "email": email},
+        { "$push":
+            {   
+                "inUse": projectID
+            }   
+        }   
+    )   
+    return
+
+def findProgramInfo(projectID):
+    print("Find Software Information to Run, returned as [git, time, [entries]]")
+    users_collection = mongo.db.users
+    check = users_collection.find({}, {"projectID": 1})
+    for item in check:
+        count = 0
+        for i in item['projectID']:
+            if str(i) == str(projectID):
+                cursor = users_collection.find({'_id': item['_id']})
+                for doc in cursor:
+                    return [doc['git'][count], doc['time'][count], doc['entries'][count]]
+            count = count + 1
+    return print("Failed getting Software Information") 
+    #Get Gitlink using projectID
+
+def storeInstance(instance):
+    arr = []
+    for i in instance['Instances']:
+        arr.append(i)
+    print("Turn instance information into array")
+    return arr
+
+def convertSSMList(instance):
+    instanceStr = str(instance)
+    instanceList = list()
+    instanceList.append(instanceStr)
+    print("Instance Name has been converted to List String")
+    print(instanceList)
+    return instanceList
+
+def amazonKeyStore():
+    KeyName='MainKeyPair'
+    print("Key pair has been called")
+    return KeyName
+
+def launchInstance(key, repoLink):
+    git = repoLink[20:]
+    countSlash = 0
+    repoName = ''
+
+    for char in git:
+        if char == '.':
+            break
+        if countSlash == 1:
+            repoName = repoName + char
+        if char == '/':
+            countSlash = countSlash + 1
+
+    user_data = '''#!/bin/bash
+    sudo yum update -y
+    sudo yum install git -y
+    sudo yum install docker -y
+    cd /home/ec2-user
+    git clone {}
+    cd {}
+    sudo curl -L "https://github.com/docker/compose/releases/download/1.28.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    sudo chmod +x /usr/local/bin/docker-compose
+    sudo service docker start
+    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+    sudo docker-compose up
+    '''.format(repoLink, repoName)
+
+    instance = ec2.run_instances(
+        ImageId='ami-04d29b6f966df1537',
+        MinCount=1,
+        MaxCount=1,
+        InstanceType='t2.micro',
+        KeyName=key,
+        UserData=user_data,
+        TagSpecifications=[
+            {
+            'ResourceType' : 'instance',
+                'Tags' : [
+                    {'Key' : 'AppTetraKey',
+                    'Value' : 'AppTetraKey'},
+            ]}]
+    )
+    print("Instance has been launched")
+    return instance
+@run.route('/api/StopProgram', methods=['GET', 'POST'])
+def stopProgram():
+    request_data = json.loads(request.data)
+    terminateInstance(request_data['email'], request_data['inUse'])
+    #terminate ec2 instance 
+    return jsonify(message=True)
+
+def terminateInstance(email, inUse):
+    users_collection = mongo.db.users
+    check = users_collection.find({'email': email})
+    for item in check:
+        count = 0
+        for i in item['inUse']:
+            if str(i) == str(inUse):
+                print(count)
+                instanceID = list()
+                instanceID.append(str(item['instances'][count][0]['InstanceId']))
+                users_collection.update({'email': email},
+                    {'$pull': {'instances': item['instances'][count]} })
+                users_collection.update({'email': email},
+                    {'$pull': {'inUse': inUse } })
+                ec2.terminate_instances(InstanceIds=instanceID)
+                return print("Terminated Instance")
+    return print("Instance Termination Failed")
 if __name__ == '__main__':
     run.run(debug=True)
 
@@ -359,83 +430,6 @@ if __name__ == '__main__':
 
 ##################################################
 ##################################################
-#    key = amazonKeyStore()
-#    instance = launchInstance(key, request_data['git'])
-#    arrInstance = storeInstance(instance)
-
-"""
-def storeInstance(instance):
-    arr = []
-    for i in instance['Instances']:
-        arr.append(i)
-    print("Turn instance information into array")
-    return arr
-
-def convertSSMList(instance):
-    instanceStr = str(instance)
-    instanceList = list()
-    instanceList.append(instanceStr)
-    print("Instance Name has been converted to List String")
-    print(instanceList)
-    return instanceList
-
-def amazonKeyStore():
-    KeyName='MainKeyPair'
-    print("Key pair has been called")
-    return KeyName
-
-def launchInstance(key, repoLink):
-    git = repoLink[20:]
-    countSlash = 0
-    repoName = ''
-
-    for char in git:
-        if char == '.':
-            break
-        if countSlash == 1:
-            repoName = repoName + char
-        if char == '/':
-            countSlash = countSlash + 1
-
-    user_data = '''#!/bin/bash
-    sudo yum update -y
-    sudo yum install git -y
-    sudo yum install docker -y
-    cd /home/ec2-user
-    git clone {}
-    cd {}
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.28.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
-    sudo service docker start
-    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-    sudo docker-compose up
-    '''.format(repoLink, repoName)
-
-    instance = ec2.run_instances(
-        ImageId='ami-04d29b6f966df1537',
-        MinCount=1,
-        MaxCount=1,
-        InstanceType='t2.micro',
-        KeyName=key,
-        UserData=user_data,
-        TagSpecifications=[
-            {
-            'ResourceType' : 'instance',
-                'Tags' : [
-                    {'Key' : 'AppTetraKey',
-                    'Value' : 'AppTetraKey'},
-            ]}]
-    )
-    print("Instance has been launched")
-    return instance
-
-"""
-
-
-
-
-
-
 
 
 
