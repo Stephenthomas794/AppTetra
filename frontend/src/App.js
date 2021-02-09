@@ -6,6 +6,7 @@ import Documentation from './Pages/Documentation/Documentation';
 import HomePage from './Pages/HomePage/HomePage';
 import SubmitProject from './Pages/SubmitProject/SubmitProject';
 import LoadingPage from './Pages/LoadingPage/LoadingPage';
+import DeleteLoadingPage from './Pages/DeleteLoadingPage/DeleteLoadingPage'
 import Results from './Pages/Results/Results';
 import Nav from './Components/Nav/Nav';
 import ProjectProfile from './Pages/ProjectProfile/ProjectProfile';
@@ -47,6 +48,7 @@ class App extends Component {
             <Route path="/HomePage" component={ HomePage } />
             <Route path="/SubmitProject" component= { SubmitProject } />
             <Route path="/LoadingPage" component={ LoadingPage } />
+            <Route path="/DeleteLoadingPage" component={ DeleteLoadingPage } />
             <Route path="/Results" component={(routeProps)=> <Results setProjectID={this.setProjectID} projectID={this.state.projectID} projectName={this.state.projectName} {...routeProps} />} 
             /> 
             <Route path="/ProjectProfile" component={(routeProps)=> <ProjectProfile projectID={this.state.projectID} projectName={this.state.projectName} {...routeProps} />} 

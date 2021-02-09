@@ -73,6 +73,8 @@ class HomePage extends Component {
                 list.push(this.handlePopulate(data['projectName'][0], data['git'][0], data['time'][0], data['entries'][0], i))
             }
             const size = data['purchases'][0].length;
+            //WILL NEED TO FETCH TO GET PROJECT NAME OF PURCHASE
+            //WILL NEED TO CHANGE CURRENTLY RUNNING TO A BOOLEAN
             for (var i = 0; i < size; i++){
                 listOfPurchases.push(this.handlePopulateOfPurchases(data['purchases'][0], data['inUse'][0], i))
                 console.log(size)
@@ -136,6 +138,7 @@ class HomePage extends Component {
             .then(response => response.json())
             .then(data => {
             console.log('Success', data);
+            this.props.history.push('/DeleteLoadingPage');
             })  
     }
 
@@ -183,7 +186,7 @@ Project Name:
     </tr>
     <tr>
         <td>
-  Currently Running?: {inUse[i]}
+  Currently Running ProjectID: {inUse[i]}
     </td>
         </tr>
     <tr>
@@ -211,6 +214,11 @@ Project Name:
         <tr>
         <td colSpan="2">
   ProjectID: {inUse[i]}
+    </td>
+    </tr>
+     <tr>
+       <td colSpan="2">
+  <Button variant="primary">View Project</Button>
     </td>
     </tr>
     </tbody>
