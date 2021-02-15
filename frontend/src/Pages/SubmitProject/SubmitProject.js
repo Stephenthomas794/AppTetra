@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import Nav from '../../Components/Nav/Nav';
+//import Upload from '../../Components/Upload/Upload';
 
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
@@ -12,12 +12,23 @@ class SubmitProject extends Component {
         projectName: '',
         git: '',
         entries: [],
-        time: ''
+        time: '',
+        launch: ''
     }
     this.handleFormSubmit = this.handleFormSubmit.bind(this);
     this.handleGit = this.handleGit.bind(this);
     this.handleProjectName = this.handleProjectName.bind(this);
     this.handleTime = this.handleTime.bind(this)
+    this.handleLaunchServer = this.handleLaunchServer.bind(this);
+    this.handleLaunchFunction = this.handleLaunchFunction.bind(this);
+    }
+
+    handleLaunchServer(){
+        this.setState({ launch: 'Server' })
+    }
+
+    handleLaunchFunction(){
+        this.setState({ launch: 'Function' })
     }
    
   addClick(){
@@ -29,7 +40,7 @@ class SubmitProject extends Component {
   createUI(){
      return this.state.entries.map((el, i) => (
        <div key={i}>
-    	    <Form.Control as="textarea" rows={1} value ={el } onChange={this.handleChange.bind(this,i)} />
+    	    <Form.Control as="textarea" rows={1} value ={el} onChange={this.handleChange.bind(this,i)} />
     	     <Button variant="primary" value='remove' onClick={this.removeClick.bind(this, i)}>
              Remove
              </Button>
@@ -50,9 +61,15 @@ class SubmitProject extends Component {
   }
 
     handleFormSubmit(event){
+
         event.preventDefault();
         const email = localStorage.getItem('email')
-        const data = { email: email, projectName: this.state.projectName, git: this.state.git, time: this.state.time, entries: this.state.entries }
+        const data = { email: email, 
+            projectName: this.state.projectName, 
+            git: this.state.git, 
+            time: this.state.time, 
+            entries: this.state.entries,
+            projectType: this.state.launch }
         fetch(`http://127.0.0.1:5000/api/SubmitProject`, {
             crossDomain: true,
             mode: 'cors',
@@ -68,6 +85,7 @@ class SubmitProject extends Component {
             console.log('Success', data);
             this.props.history.push('/HomePage');  
         })
+
         }
     
 
@@ -86,12 +104,15 @@ class SubmitProject extends Component {
     render() {
     return (
         <div className= 'SubmitProject'>
-        <Form onSubmit={this.handleFormSubmit}>
+        <Form >
   
   <Form.Group controlId="exampleForm.ControlTextarea1">
     <Form.Label>Enter Project Name</Form.Label>
     <Form.Control as="textarea" rows={1} value = { this.state.projectName} onChange={ this.handleProjectName }/>
   </Form.Group>
+
+    <Button variant="primary" size="lg" onClick={this.handleLaunchServer} block>Launch A Server</Button> 
+    <Button variant="primary" size="lg" onClick={this.handleLaunchFunction} block>Launch a Function</Button>
 
 <Form.Group controlId="exampleForm.ControlTextarea1">
     <Form.Label>Submit Your Github Repository</Form.Label>
@@ -99,10 +120,9 @@ class SubmitProject extends Component {
   </Form.Group>
 
 <Form.Group controlId="exampleForm.ControlTextarea1">
-    <Form.Label>How Long Will This Program Run In Days</Form.Label>
+    <Form.Label>How Long Will the user own this software</Form.Label>
     <Form.Control as="textarea" rows={1} value = { this.state.time } onChange={ this.handleTime }/> 
   </Form.Group>
-
 
 <Form.Group controlId="exampleForm.ControlTextarea1">
 <Form.Label>What Entries Do You Need From User</Form.Label>
@@ -114,7 +134,7 @@ class SubmitProject extends Component {
 
 </Form.Group>
 
-<Button variant="primary" type="submit">
+<Button onClick={this.handleFormSubmit}variant="primary" type="submit">
         Submit
     </Button>
 

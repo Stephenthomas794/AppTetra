@@ -11,6 +11,8 @@ import os
 import json
 import paramiko
 import random 
+import zipfile
+import subprocess
 
 from .extensions import mongo
 from .models import db
@@ -25,6 +27,9 @@ from .models import users
 
 ec2 = boto3.client('ec2')
 ssm = boto3.client('ssm',region_name='us-east-1')
+lamb = boto3.client('lambda')
+s3 = boto3.client('s3')
+session = boto3.session.Session()
 
 @run.route('/')
 def hello():
@@ -57,7 +62,7 @@ def existingUser(checkEmail):
 
 def mongoDBUser(email):
     users_collection = mongo.db.users
-    users_collection.insert({'email' : email, 'purchases': [], 'time':[], 'entries': [], 'projectName':[], 'git': [], 'inUse': [], 'projectID': []})
+    users_collection.insert({'email' : email, 'purchases': [], 'time':[], 'entries': [], 'projectName':[], 'git': [], 'inUse': [], 'projectID': [], 'projectType': []})
     return
 
 @run.route('/api/signIn', methods=['GET','POST'])
@@ -98,14 +103,14 @@ def existingUser(checkEmail):
 def SubmitProject():
     request_data = json.loads(request.data)
     projectID = generateProjectID()
-    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], projectID)
+    addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], projectID, request_data['projectType'])
     return jsonify(message=True)
 
 def generateProjectID():
     val = random.randint(0, 100000000000000)
     return val
 
-def addEntry(email, projectName, git, time, entries, projectID):
+def addEntry(email, projectName, git, time, entries, projectID, projectType):
     users_collection = mongo.db.users
     users_collection.update_one(
         {"email": email}, {
@@ -114,9 +119,10 @@ def addEntry(email, projectName, git, time, entries, projectID):
                 "git": git, 
                 "time": time,
                 "entries": entries,
-                "projectID": projectID
+                "projectID": projectID,
+                "projectType": projectType
                 }});
-    print("Information: projectName, git, time, entries, and projectID have been Added to MongoDB")
+    print("Information: projectName, git, time, entries, projectID, and projectType have been Added to MongoDB")
 
 @run.route('/api/Delete', methods=['GET', 'POST'])
 def deleteInstance(instance):
@@ -223,12 +229,34 @@ def addPurchase():
 def runProgram():
     request_data = json.loads(request.data)
     information = findProgramInfo(request_data['projectID']) 
+    projectType = getProjectType(request_data['projectID'])
     key = amazonKeyStore()
-    instance = launchInstance(key, information[0])
-    arrInstance = storeInstance(instance)
-    addInstanceMongo(request_data['email'], arrInstance)
-    addInUse(request_data['email'], request_data['projectID'])
+    print(projectType)
+    if projectType[0] == 'Server':
+        instance = launchInstance(key, information[0])
+        arrInstance = storeInstance(instance)
+        addInstanceMongo(request_data['email'], arrInstance)
+        addInUse(request_data['email'], request_data['projectID'])
+    elif projectType[0] == 'Function':
+        print("Function")
+        fileName = getZipFile(information[0])
+        storeInS3(fileName, key)
+    else:
+        print("Not a Server or Function")
     return jsonify(message=True)
+
+def getProjectType(projectID):
+    users_collection = mongo.db.users
+    check = users_collection.find({}, {"projectID": 1})
+    for item in check:
+        count = 0
+        for i in item['projectID']:
+            if str(i) == str(projectID):
+                cursor = users_collection.find({'_id': item['_id']})
+                for doc in cursor:
+                    return [doc['projectType'][count]]
+            count = count + 1
+    return print("Failed getting projectType")
 
 def addInstanceMongo(email, instanceInfo):
     #Add arrInstance (instance info) to user's document
@@ -334,6 +362,40 @@ def launchInstance(key, repoLink):
     )
     print("Instance has been launched")
     return instance
+
+def getZipFile(repoLink):
+    git = repoLink[20:]
+    countSlash = 0 
+    repoName = ''
+
+    for char in git:
+        if char == '.':
+            break
+        if countSlash == 1:
+            repoName = repoName + char
+        if char == '/':
+            countSlash = countSlash + 1 
+    command = 'git clone {} /Users/stephenthomas/desktop/Apptetra/backend/app/{}'.format(repoLink, repoName)
+    os.system(command)
+    print("Added git files to folder")
+    return repoName
+
+def storeInS3(repoName, key):
+    fileName = '/Users/stephenthomas/desktop/Apptetra/backend/app/{}'.format(repoName)
+    current_region = session.region_name
+    s3.create_bucket(Bucket= repoName,
+        CreateBucketConfiguration={'LocationConstraint':'us-east-2'})
+    
+#    with open(fileName, 'rb') as data:
+#        s3.upload_fileobj(data, repoName, key)
+    return print("New bucket Created")
+    
+def clearTempFolder(repoName):
+    pass
+
+def launchFunction():
+    pass
+
 @run.route('/api/StopProgram', methods=['GET', 'POST'])
 def stopProgram():
     request_data = json.loads(request.data)

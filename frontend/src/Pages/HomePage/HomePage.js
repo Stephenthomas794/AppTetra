@@ -4,7 +4,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Table from 'react-bootstrap/Table';
 import { Header } from 'semantic-ui-react'
 
-import Nav from '../../Components/Nav/Nav';
 import Projects from '../../Components/Projects/Projects';
 import Purchases from '../../Components/Purchases/Purchases';
 import Running from '../../Components/Running/Running';
@@ -43,9 +42,9 @@ class HomePage extends Component {
     componentDidMount(){
         return this.handleLoad();
     }
-    
+
     handleLoad() {
-    this.state.email = localStorage.getItem('email')
+    this.state.email =  localStorage.getItem('email');
     console.log(this.state.email);
     const data = { email: this.state.email }
     fetch('http://127.0.0.1:5000/api/Projects', {
@@ -75,13 +74,13 @@ class HomePage extends Component {
             const size = data['purchases'][0].length;
             //WILL NEED TO FETCH TO GET PROJECT NAME OF PURCHASE
             //WILL NEED TO CHANGE CURRENTLY RUNNING TO A BOOLEAN
-            for (var i = 0; i < size; i++){
+            for (i = 0; i < size; i++){
                 listOfPurchases.push(this.handlePopulateOfPurchases(data['purchases'][0], data['inUse'][0], i))
                 console.log(size)
                 console.log(data['purchases'][0])
             }
             const sizeRunning = data['inUse'][0].length;
-            for (var i = 0; i < sizeRunning; i++){
+            for (i = 0; i < sizeRunning; i++){
                 listOfRunning.push(this.handlePopulateOfRunning(data['inUse'][0], i))
                 console.log(size)
             }

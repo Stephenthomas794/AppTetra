@@ -30,7 +30,7 @@ class Nav extends Component {
 
     handleFormSubmit(event){
         event.preventDefault();
-        const email = localStorage.getItem('email');
+//        const email = localStorage.getItem('email');
         console.log(this.state.searchValue);
         var searchValue = this.state.searchValue
         

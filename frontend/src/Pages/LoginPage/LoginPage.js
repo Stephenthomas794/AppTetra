@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 
-import Nav from '../../Components/Nav/Nav';
 import SignUp from '../../Components/SignUp/SignUp';
 import SignIn from '../../Components/SignIn/SignIn';
 
