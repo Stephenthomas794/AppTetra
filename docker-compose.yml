@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+    client:
+        container_name: client
+        build: 
+            context: ./client
+            dockerfile: Dockerfile
+        ports: 
+            - '80:80'
+            - '443:443'
+        environment:
+            - REACT_APP_API_PROXY=
+    backend:
+        build:
+            context: ./server
+            dockerfile: Dockerfile
+        command: gunicorn mainApp:create_app() --bind 0.0.0.0:8080
+        container_name: backend
+        restart: always
+        environment: 
+            - APP_NAME=StephenTracker
+            - MONGO_URI=mongodb+srv://Admin:2QK8k4NSi21ZGZK2@usersinfo.tvi7l.mongodb.net/UsersInfo?retryWrites=true&w=majority
+            - SQLALCHEMY_DATABASE_URI=sqlite:///HabitTracker.db
+        expose:
+            - 8080
+        env_file:
+            - server/.env
+
