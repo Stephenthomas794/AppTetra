@@ -15,6 +15,7 @@ import zipfile
 import subprocess
 import shutil
 import base64
+import io
 
 from .extensions import mongo
 from .models import db
@@ -28,8 +29,8 @@ run = Blueprint('run', __name__)
 from .models import users
 
 ec2 = boto3.client('ec2')
-ssm = boto3.client('ssm',region_name='us-east-1')
-lamb = boto3.client('lambda')
+ssm = boto3.client('ssm',region_name='us-east-2')
+lamb = boto3.client('lambda',region_name='us-east-2')
 s3 = boto3.client('s3')
 session = boto3.session.Session()
 
@@ -106,7 +107,75 @@ def SubmitProject():
     request_data = json.loads(request.data)
     projectID = generateProjectID()
     addEntry(request_data['email'], request_data['projectName'], request_data['git'], request_data['time'], request_data['entries'], projectID, request_data['projectType'])
+    information = findProgramInfo(projectID) 
+    if request_data['projectType'] == 'Function':
+        print("Function")
+        repoName = getZipFile(information[0])                         
+        storeInS3(repoName)
+        createFunction(repoName)
+        clearTempFolder(repoName,'temp.zip')
     return jsonify(message=True)
+
+def findProgramInfo(projectID):
+    print("Find Software Information to Run, returned as [git, time, [entries]]")
+    users_collection = mongo.db.users
+    check = users_collection.find({}, {"projectID": 1})
+    for item in check:
+        count = 0
+        for i in item['projectID']:
+            if str(i) == str(projectID):
+                cursor = users_collection.find({'_id': item['_id']})
+                for doc in cursor:
+                    return [doc['git'][count], doc['time'][count], doc['entries'][count]]
+            count = count + 1
+    return print("Failed getting Software Information") 
+    #Get Gitlink using projectID
+
+def getZipFile(repoLink):
+    git = repoLink[20:]
+    countSlash = 0
+    repoName = ''
+    for char in git:
+        if char == '.':
+            break
+        if countSlash == 1:
+            repoName = repoName + char
+        if char == '/':
+            countSlash = countSlash + 1
+    command = 'git clone {} /Users/stephenthomas/desktop/Apptetra/backend/{}'.format(repoLink, repoName)
+    os.system(command)
+    print("Added git files to folder")
+    print(repoName)
+    return repoName
+
+def storeInS3(repoName):
+    print('REPO NAME IS {}'.format(repoName))
+    current_region = session.region_name
+    s3.create_bucket(Bucket= repoName.lower(),
+        CreateBucketConfiguration={'LocationConstraint':'us-east-2'})
+    myzip = zipfile.ZipFile('temp.zip', 'w', allowZip64=False)
+    myzip.write('/Users/stephenthomas/desktop/Apptetra/backend/{}/function.py'.format(repoName))
+    with open('/Users/stephenthomas/desktop/Apptetra/backend/temp.zip', 'rb+') as myzip:
+        myzip.seek(0)
+        s3.put_object(Body=myzip.read(), Bucket=repoName.lower(), Key='temp.zip')
+    return print("New bucket Created and Data Uploaded")
+
+def clearTempFolder(repoName, zipFile):
+    command = 'rm -rf {}'.format(repoName)
+    os.system(command)
+    command2 = 'rm -rf {}'.format(zipFile)
+    return print("Removed Repo Folder and temp zip file")
+
+def createFunction(repoName):
+    create_lambda_function = lamb.create_function(
+        FunctionName=repoName,
+        Runtime='python3.7',
+        Role='arn:aws:iam::090093254535:role/LamdaS3',
+        Handler='{}.lambda_handler'.format('lambda_build'),
+        Description='Run Function',
+        Publish=True,
+        Code={'S3Bucket':'{}'.format(repoName.lower()), 'S3Key':'temp.zip'}
+    )
 
 def generateProjectID():
     val = random.randint(0, 100000000000000)
@@ -241,9 +310,6 @@ def runProgram():
         addInUse(request_data['email'], request_data['projectID'])
     elif projectType[0] == 'Function':
         print("Function")
-        repoName = getZipFile(information[0])
-        storeInS3(repoName, key)
-        launchFunction(repoName)
     else:
         print("Not a Server or Function")
     return jsonify(message=True)
@@ -365,69 +431,6 @@ def launchInstance(key, repoLink):
     )
     print("Instance has been launched")
     return instance
-
-def getZipFile(repoLink):
-    git = repoLink[20:]
-    countSlash = 0 
-    repoName = ''
-    for char in git:
-        if char == '.':
-            break
-        if countSlash == 1:
-            repoName = repoName + char
-        if char == '/':
-            countSlash = countSlash + 1 
-    command = 'git clone {} /Users/stephenthomas/desktop/Apptetra/backend/{}'.format(repoLink, repoName)
-    os.system(command)
-    print("Added git files to folder")
-    print(repoName)
-#    shutil.make_archive('temp', 'zip', '/Users/stephenthomas/desktop/Apptetra/backend/app/{}'.format(repoName))
-#    archive = zipfile.ZipFile('function.zip', 'w')
-#    archive.write('function.py', '/Users/stephenthomas/desktop/Apptetra/backend/app/{}/function.py'.format(repoName))
-#    fileName = '/Users/stephenthomas/desktop/Apptetra/backend/app/{}'.format(repoName)
-#    current_region = session.region_name
-#    s3.create_bucket(Bucket= repoName,
-#        CreateBucketConfiguration={'LocationConstraint':'us-east-2'})
-#    s3.put_object(Body=archive, Bucket=repoName, Key='function.zip')  
-    return repoName
-
-def storeInS3(repoName, key):
-    fileName = '/Users/stephenthomas/desktop/Apptetra/backend/app/{}'.format(repoName)
-#    archive = shutil.make_archive('temp', 'zip', '/Users/stephenthomas/desktop/Apptetra/backend/app/{}'.format(repoName))  
-    archive = zipfile.ZipFile('function.zip', 'w')
-    archive.write('function.py', '/Users/stephenthomas/desktop/Apptetra/backend/app/{}/function.py'.format(repoName))
-    current_region = session.region_name
-    s3.create_bucket(Bucket= repoName.lower(),
-        CreateBucketConfiguration={'LocationConstraint':'us-east-2'})
-    s3.put_object(Body=archive, Bucket=repoName.lower(), Key='temp.zip')
-#    uploadFileNames = []
-#    for root, dirs, files in os.walk(fileName, topdown=False):
-#       for name in files:
-#          fname=os.path.join(root, name)
-#          print (fname)
-#          uploadFileNames.append(fname)
-#    print ('uploadFileNames = {}'.format(uploadFileNames))    
-#    for filename in uploadFileNames:
-#       # with open(fileName, 'rb') as data:
-#        s3.upload_file(Filename=filename, Bucket=repoName, Key=filename)
-    return print("New bucket Created and Data Uploaded")
-
-def clearTempFolder(repoName):
-    pass
-
-def file_get_contents(filename):
-    with open(filename) as f:
-        return f.read()
-
-def launchFunction(repoName):
-    create_lambda_function = lamb.create_function(
-        FunctionName=repoName,
-        Runtime='python3.7',
-        Role='arn:aws:iam::090093254535:role/AppTetraAdmin',
-        Handler='{}.lambda_handler'.format('lambda_build'),
-        Description='Run Function',
-        Code={'S3Bucket':'{}'.format(repoName.lower()), 'S3Key':'function.zip',}
-    )  
 
 @run.route('/api/StopProgram', methods=['GET', 'POST'])
 def stopProgram():
