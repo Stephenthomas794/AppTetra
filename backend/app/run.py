@@ -163,7 +163,7 @@ def storeInS3(repoName):
 def clearTempFolder(repoName, zipFile):
     command = 'rm -rf {}'.format(repoName)
     os.system(command)
-    command2 = 'rm -rf {}'.format(zipFile)
+    command2 = 'rm -rf /Users/stephenthomas/desktop/Apptetra/backend/{}'.format(zipFile)
     return print("Removed Repo Folder and temp zip file")
 
 def createFunction(repoName):
@@ -310,6 +310,8 @@ def runProgram():
         addInUse(request_data['email'], request_data['projectID'])
     elif projectType[0] == 'Function':
         print("Function")
+        launchFunction(information[0])
+       # addInUse(request_data['email'], request_data['projectID'])
     else:
         print("Not a Server or Function")
     return jsonify(message=True)
@@ -399,7 +401,7 @@ def launchInstance(key, repoLink):
             repoName = repoName + char
         if char == '/':
             countSlash = countSlash + 1
-
+ 
     user_data = '''#!/bin/bash
     sudo yum update -y
     sudo yum install git -y
@@ -415,7 +417,7 @@ def launchInstance(key, repoLink):
     '''.format(repoLink, repoName)
 
     instance = ec2.run_instances(
-        ImageId='ami-0be2609ba883822ec',
+        ImageId='ami-01aab85a5e4a5a0fe',
         MinCount=1,
         MaxCount=1,
         InstanceType='t2.micro',
@@ -431,6 +433,25 @@ def launchInstance(key, repoLink):
     )
     print("Instance has been launched")
     return instance
+
+def launchFunction(repoLink):
+    git = repoLink[20:]
+    countSlash = 0 
+    repoName = ''
+
+    for char in git:
+        if char == '.':
+            break
+        if countSlash == 1:
+            repoName = repoName + char
+        if char == '/':
+            countSlash = countSlash + 1
+    
+    function = lamb.invoke(
+        FunctionName=repoName
+        )    
+    
+    return function
 
 @run.route('/api/StopProgram', methods=['GET', 'POST'])
 def stopProgram():
